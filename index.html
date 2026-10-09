@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>玄霜 HADES | RHODES ISLAND TERMINAL</title>
+<link rel="stylesheet" href="https://fonts.loli.net/css2?family=Oswald:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap">
+<style>
+  :root {
+    --ak-black: #0b0c0e;
+    --ak-dark: #141619;
+    --ak-panel: #1b1e23;
+    --ak-line: #2f333b;
+    --ak-gray: #878c96;
+    --ak-white: #e9ebee;
+    --ak-yellow: #ffd802;
+    --ak-yellow-dim: #b89a00;
+    --font-latin: 'Oswald', 'Arial Narrow', sans-serif;
+    --font-cn: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--ak-black); color: var(--ak-white);
+    font-family: var(--font-cn); overflow-x: hidden;
+  }
+  ::selection { background: var(--ak-yellow); color: #000; }
+  .latin { font-family: var(--font-latin); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ===== 全局扫描线 + 噪点 ===== */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 999; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: 998; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0,0,0,.42));
+  }
+  /* 扫描光束 */
+  .scanbeam {
+    position: fixed; left: 0; right: 0; top: -10%; height: 120px; z-index: 997; pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(255,216,2,.045), transparent);
+    animation: beam 9s linear infinite;
+  }
+  @keyframes beam { 0% { top: -15%; } 100% { top: 110%; } }
+
+  /* ===== 警示条纹（滚动） ===== */
+  .hazard {
+    height: 8px;
+    background: repeating-linear-gradient(-45deg, var(--ak-yellow) 0 14px, #0a0a0a 14px 28px);
+    background-size: 40px 8px;
+    animation: crawl 2.4s linear infinite;
+  }
+  @keyframes crawl { to { background-position: 40px 0; } }
+  .hazard.static { animation: none; }
+
+  /* ===== 顶部导航 ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(11,12,14,.92); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--ak-line);
+  }
+  .topbar-inner {
+    max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between; height: 60px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ak-white); }
+  .brand-mark {
+    width: 34px; height: 34px; background: var(--ak-yellow);
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: #000; font-weight: 700; font-size: 15px; font-family: var(--font-latin);
+    animation: blink 3s steps(1) infinite;
+  }
+  @keyframes blink { 0%,92% { opacity: 1; } 94%,96% { opacity: .4; } 98% { opacity: 1; } }
+  .brand-name { font-family: var(--font-latin); font-size: 17px; letter-spacing: .12em; font-weight: 600; }
+  .brand-name em { color: #57a9ff; font-style: normal; }
+  .nav { display: flex; gap: 4px; }
+  .nav a {
+    color: var(--ak-gray); text-decoration: none; font-size: 13px; letter-spacing: .15em;
+    padding: 8px 16px; position: relative; transition: color .2s; cursor: pointer;
+  }
+  .nav a:hover, .nav a.active { color: var(--ak-yellow); }
+  .nav a.active::before {
+    content: ''; position: absolute; left: 4px; top: 50%; transform: translateY(-50%);
+    width: 0; height: 0; border-left: 6px solid var(--ak-yellow);
+    border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+  }
+  .topbar-code { font-family: var(--font-latin); font-size: 11px; color: var(--ak-line); letter-spacing: .3em; }
+  .topbar-code .live { color: var(--ak-yellow); animation: pulse 1.6s ease infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+  /* ===== HERO ===== */
+  .hero {
+    position: relative; max-width: 1200px; margin: 0 auto;
+    padding: 64px 24px 48px; display: grid; grid-template-columns: 1.1fr .9fr;
+    gap: 40px; align-items: center; overflow: visible;
+  }
+  /* 剪影大背景 */
+  .hero-sil {
+    position: absolute; right: -140px; top: -30px; z-index: 0;
+    height: 115%; opacity: .5; pointer-events: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 30%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 30%);
+    filter: saturate(.9);
+    animation: silFloat 12s ease-in-out infinite alternate;
+  }
+  @keyframes silFloat { from { transform: translateY(0); } to { transform: translateY(-16px); } }
+  .hero::before {
+    content: 'RHODES ISLAND'; position: absolute; left: 12px; top: 8px; z-index: 0;
+    font-family: var(--font-latin); font-size: clamp(70px, 10vw, 130px); font-weight: 700;
+    color: transparent; -webkit-text-stroke: 1px #1e2127;
+    letter-spacing: .03em; pointer-events: none; line-height: .95; white-space: nowrap;
+  }
+  .hero-left { position: relative; z-index: 2; }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    color: var(--ak-yellow); font-size: 13px; letter-spacing: .35em; margin-bottom: 18px;
+    opacity: 0; animation: fadeUp .7s .1s ease both;
+  }
+  .hero-tag::before { content: ''; width: 36px; height: 2px; background: var(--ak-yellow); }
+  .hero-title {
+    font-family: var(--font-latin); font-weight: 700; text-transform: uppercase;
+    font-size: clamp(50px, 6.5vw, 92px); line-height: .95; letter-spacing: .01em;
+    opacity: 0; animation: fadeUp .7s .25s ease both;
+  }
+  .hero-title .stroke { display: block; color: transparent; -webkit-text-stroke: 2px var(--ak-white); position: relative; }
+  .hero-title .stroke.glitch::after {
+    content: attr(data-t); position: absolute; left: 3px; top: 0;
+    color: transparent; -webkit-text-stroke: 2px rgba(255,216,2,.6);
+    clip-path: inset(20% 0 40% 0); animation: glitch 2.6s steps(2) infinite;
+  }
+  @keyframes glitch {
+    0%, 90%, 100% { transform: none; opacity: 0; }
+    92% { transform: translate(3px, -2px); opacity: 1; }
+    95% { transform: translate(-4px, 1px); opacity: 1; }
+    98% { transform: translate(2px, 0); opacity: 1; }
+  }
+  .hero-title .fill { display: block; color: var(--ak-yellow); }
+  .hero-sub {
+    margin-top: 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    opacity: 0; animation: fadeUp .7s .4s ease both;
+  }
+  .hero-sub .cn-name { font-size: 26px; font-weight: 900; letter-spacing: .3em; }
+  .hero-sub .divider { width: 1px; height: 26px; background: var(--ak-line); }
+  .hero-sub .code { font-family: var(--font-latin); color: var(--ak-gray); font-size: 14px; letter-spacing: .2em; }
+  .hero-quote {
+    margin-top: 26px; color: var(--ak-gray); font-size: 15px; line-height: 1.9; max-width: 470px;
+    border-left: 3px solid var(--ak-yellow); padding-left: 16px;
+    opacity: 0; animation: fadeUp .7s .55s ease both;
+  }
+  .hero-quote b { color: var(--ak-white); }
+  .hero-quote .age { color: var(--ak-yellow); font-family: var(--font-latin); font-size: 17px; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+  .hero-meta {
+    margin-top: 34px; display: flex; border: 1px solid var(--ak-line);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+    background: rgba(20,22,25,.75); opacity: 0; animation: fadeUp .7s .7s ease both;
+  }
+  .hero-meta .cell { flex: 1; padding: 14px 18px; border-right: 1px solid var(--ak-line); }
+  .hero-meta .cell:last-child { border-right: none; }
+  .hero-meta .k { font-size: 11px; color: var(--ak-gray); letter-spacing: .25em; margin-bottom: 6px; }
+  .hero-meta .v { font-family: var(--font-latin); font-size: 17px; color: var(--ak-white); letter-spacing: .08em; }
+  .hero-meta .v.y { color: var(--ak-yellow); }
+
+  /* HERO 右侧：通行证（背景为背影剪影） */
+  .hero-right { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 30px 0 56px; }
+  .pass-stack {
+    position: relative; perspective: 900px; transition: transform .15s ease-out;
+  }
+  .pass-card {
+    width: min(310px, 68vw); position: relative; z-index: 2;
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+    box-shadow: 0 24px 60px rgba(0,0,0,.65);
+    transition: transform .4s cubic-bezier(.2,.8,.2,1);
+    transform: rotate(2.5deg); transform-style: preserve-3d;
+  }
+  .pass-card:hover { transform: rotate(0deg) scale(1.03); }
+  .pass-card img { display: block; width: 100%; }
+  .pass-stamp {
+    position: absolute; z-index: 4; left: -20px; top: -16px;
+    background: var(--ak-yellow); color: #000; padding: 7px 13px;
+    font-family: var(--font-latin); font-weight: 700; font-size: 12px; letter-spacing: .2em;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+    box-shadow: 0 6px 18px rgba(0,0,0,.5);
+  }
+  .pass-stamp::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0 4px, rgba(0,0,0,.08) 4px 5px);
+  }
+  .pass-id {
+    position: absolute; z-index: 4; right: -8px; bottom: 26px;
+    writing-mode: vertical-rl; font-family: var(--font-latin);
+    font-size: 10px; letter-spacing: .4em; color: var(--ak-gray);
+    background: rgba(11,12,14,.8); padding: 10px 4px; border: 1px solid var(--ak-line);
+  }
+
+  /* ===== 滚动播报条 ===== */
+  .ticker {
+    overflow: hidden; border-top: 1px solid var(--ak-line); border-bottom: 1px solid var(--ak-line);
+    background: #0f1013; position: relative; z-index: 2;
+  }
+  .ticker-track {
+    display: inline-flex; gap: 60px; white-space: nowrap; padding: 10px 0;
+    font-family: var(--font-latin); font-size: 12px; letter-spacing: .3em; color: var(--ak-gray);
+    animation: ticker 26s linear infinite;
+  }
+  .ticker-track b { color: var(--ak-yellow); font-weight: 500; }
+  @keyframes ticker { to { transform: translateX(-50%); } }
+
+  /* ===== 基建控制台 ===== */
+  .console { max-width: 1200px; margin: 0 auto; padding: 56px 24px 72px; position: relative; }
+  .console-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 22px;
+  }
+  .console-title { display: flex; align-items: baseline; gap: 16px; }
+  .console-title .num {
+    font-family: var(--font-latin); font-weight: 700; font-size: 44px;
+    color: transparent; -webkit-text-stroke: 1.5px var(--ak-yellow); line-height: 1;
+  }
+  .console-title h2 { font-size: 26px; font-weight: 900; letter-spacing: .15em; }
+  .console-title .en { font-family: var(--font-latin); color: var(--ak-gray); font-size: 12px; letter-spacing: .3em; }
+
+  /* 基建设施切换栏 */
+  .fac-tabs {
+    display: flex; border: 1px solid var(--ak-line); background: var(--ak-dark);
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  }
+  .fac-tab {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 15px 10px; cursor: pointer; position: relative;
+    color: var(--ak-gray); background: transparent; border: none; font-family: var(--font-cn);
+    font-size: 14px; font-weight: 700; letter-spacing: .2em;
+    border-right: 1px solid var(--ak-line); transition: color .25s, background .25s;
+  }
+  .fac-tab:last-child { border-right: none; }
+  .fac-tab .ico { font-size: 16px; filter: grayscale(1) brightness(.8); transition: filter .25s; }
+  .fac-tab .cnt {
+    font-family: var(--font-latin); font-size: 11px; color: var(--ak-gray);
+    border: 1px solid var(--ak-line); padding: 1px 7px; letter-spacing: .1em; transition: all .25s;
+  }
+  .fac-tab::after {
+    content: ''; position: absolute; left: 0; right: 100%; bottom: 0; height: 3px;
+    background: var(--ak-yellow); transition: right .3s cubic-bezier(.7,0,.3,1);
+  }
+  .fac-tab:hover { color: var(--ak-white); background: #1d2026; }
+  .fac-tab.active { color: var(--ak-yellow); background: #20232a; }
+  .fac-tab.active .ico { filter: none; }
+  .fac-tab.active .cnt { color: #000; background: var(--ak-yellow); border-color: var(--ak-yellow); }
+  .fac-tab.active::after { right: 0; }
+
+  /* 面板 */
+  .fac-panels { position: relative; margin-top: 28px; }
+  .fac-panel {
+    display: none; border: 1px solid var(--ak-line); background: var(--ak-dark);
+    padding: 34px 30px; position: relative; overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+  }
+  .fac-panel.on { display: block; animation: panelIn .45s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes panelIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  .fac-panel .panel-tag {
+    position: absolute; right: 0; top: 0; background: var(--ak-panel);
+    border-left: 1px solid var(--ak-line); border-bottom: 1px solid var(--ak-line);
+    font-family: var(--font-latin); font-size: 10px; letter-spacing: .3em; color: var(--ak-gray);
+    padding: 7px 14px;
+  }
+  .panel-sub { color: var(--ak-gray); font-size: 13px; letter-spacing: .1em; margin-bottom: 26px; }
+  .panel-sub b { color: var(--ak-yellow); font-weight: 500; }
+
+  /* ---- 面板1：档案 ---- */
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .file-block { border: 1px solid var(--ak-line); background: var(--ak-panel); position: relative; }
+  .file-block .fb-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 18px; border-bottom: 1px solid var(--ak-line);
+    font-family: var(--font-latin); font-size: 12px; letter-spacing: .25em; color: var(--ak-gray);
+  }
+  .file-block .fb-head .tag { color: #000; background: var(--ak-yellow); padding: 3px 10px; font-weight: 600; }
+  .file-block .fb-body { padding: 24px 22px; }
+  .file-block .fb-body p { color: var(--ak-gray); line-height: 2; font-size: 15px; }
+  .file-block .fb-body p b { color: var(--ak-white); }
+  .file-block .fb-body .uwu { margin-top: 14px; color: var(--ak-yellow); font-weight: 700; letter-spacing: .1em; }
+  .exam-row { margin-bottom: 26px; }
+  .exam-row:last-child { margin-bottom: 0; }
+  .exam-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .exam-label .n { font-size: 15px; font-weight: 700; letter-spacing: .2em; }
+  .exam-label .p { font-family: var(--font-latin); font-size: 20px; color: var(--ak-yellow); }
+  .exam-bar { height: 10px; background: #26292f; position: relative; overflow: hidden; }
+  .exam-bar i {
+    position: absolute; inset: 0 auto 0 0; background: var(--ak-yellow);
+    transform-origin: left; animation: grow 1.4s cubic-bezier(.7,0,.3,1) both;
+  }
+  .exam-bar i.dragon { background: #6ea8ff; }
+  .exam-bar i.mech { background: #e9ebee; }
+  @keyframes grow { from { transform: scaleX(0); } }
+  .exam-note { margin-top: 22px; font-size: 12px; color: var(--ak-gray); line-height: 1.8; letter-spacing: .05em; }
+  .exam-note::before { content: '⚠ '; color: var(--ak-yellow); }
+  .exam-note.alert {
+    border: 1px solid rgba(255,92,92,.45); background: rgba(255,92,92,.07);
+    padding: 10px 14px; color: #ff9d9d;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  }
+  .exam-note.alert::before { content: '⛔ '; color: #ff5c5c; }
+  .exam-note.alert b { color: #ffb1b1; }
+  .exam-note + .exam-note { margin-top: 12px; }
+  .file-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .file-stats .st {
+    border: 1px solid var(--ak-line); background: #17191d; padding: 12px; text-align: center;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  }
+  .file-stats .st .k { font-size: 10px; color: var(--ak-gray); letter-spacing: .2em; margin-bottom: 6px; }
+  .file-stats .st .v { font-family: var(--font-latin); font-size: 18px; color: var(--ak-white); }
+  .file-stats .st .v.y { color: var(--ak-yellow); }
+
+  /* ---- 面板2：情报网 ---- */
+  .link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .op-card {
+    position: relative; background: var(--ak-panel); border: 1px solid var(--ak-line);
+    padding: 18px; text-decoration: none; color: inherit; display: flex; gap: 14px; align-items: center;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+    transition: transform .25s ease, border-color .25s ease, background .25s ease;
+    overflow: hidden;
+  }
+  .op-card::after {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--ak-line); transition: background .25s;
+  }
+  .op-card:hover { transform: translateY(-4px); border-color: var(--ak-yellow-dim); background: #21252b; }
+  .op-card:hover::after { background: var(--ak-yellow); }
+  .op-card .idx {
+    position: absolute; right: 12px; top: 8px;
+    font-family: var(--font-latin); font-size: 26px; font-weight: 700;
+    color: transparent; -webkit-text-stroke: 1px #2c3038; line-height: 1;
+  }
+  .op-card .avatar {
+    flex: none; width: 84px; height: 84px; position: relative;
+    background: #0a0b0d; border: 1px solid var(--ak-line);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+    overflow: hidden;
+  }
+  .op-card .avatar img {
+    width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
+    filter: grayscale(1) contrast(1.05); opacity: .82;
+    transition: filter .35s ease, opacity .35s ease, transform .35s ease;
+  }
+  .op-card:hover .avatar img { filter: none; opacity: 1; transform: scale(1.06); }
+  .op-card .avatar::after {
+    content: ''; position: absolute; right: 0; top: 0;
+    border-top: 12px solid var(--ak-yellow); border-left: 12px solid transparent;
+    opacity: 0; transition: opacity .3s;
+  }
+  .op-card:hover .avatar::after { opacity: 1; }
+  .op-card .info { min-width: 0; padding-right: 22px; }
+  .op-card .cls {
+    display: inline-block; font-family: var(--font-latin); font-size: 10px; letter-spacing: .25em;
+    color: var(--ak-yellow); border: 1px solid var(--ak-yellow-dim); padding: 2px 8px; margin-bottom: 8px;
+  }
+  .op-card .name { font-size: 16px; font-weight: 900; letter-spacing: .05em; margin-bottom: 5px; }
+  .op-card .name span { font-family: var(--font-latin); font-weight: 500; color: var(--ak-gray); font-size: 12px; margin-left: 8px; letter-spacing: .1em; }
+  .op-card .desc { color: var(--ak-gray); font-size: 12.5px; line-height: 1.7; }
+  .op-card .go {
+    margin-top: 10px; display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-latin); font-size: 10px; letter-spacing: .25em; color: var(--ak-gray);
+    transition: color .25s;
+  }
+  .op-card:hover .go { color: var(--ak-yellow); }
+  .op-card .go::after { content: '▶'; font-size: 8px; }
+
+  /* 活动特型卡：洛茜聚 */
+  .op-card.event-card {
+    border-color: rgba(255,138,42,.55);
+    background: linear-gradient(135deg, #241a12 0%, #1d1512 55%, #1a1017 100%);
+  }
+  .op-card.event-card::after { background: #ff8a2a; }
+  .op-card.event-card:hover { border-color: #ff8a2a; background: linear-gradient(135deg, #2c2015 0%, #221813 55%, #20121b 100%); }
+  .op-card.event-card:hover::after { background: #ffb15c; }
+  .op-card.event-card .cls { color: #ffb15c; border-color: rgba(255,138,42,.6); animation: pulse 2.2s ease infinite; }
+  .op-card.event-card .go { color: #c9925e; }
+  .op-card.event-card:hover .go { color: #ffb15c; }
+  .op-card.event-card .avatar::after { border-top-color: #ff8a2a; }
+  .op-card.event-card .ribbon {
+    position: absolute; right: -34px; top: 14px; transform: rotate(38deg);
+    background: #ff8a2a; color: #140b04; font-size: 10px; font-weight: 900; letter-spacing: .2em;
+    padding: 4px 40px; box-shadow: 0 4px 14px rgba(255,138,42,.35);
+  }
+
+  /* ---- 面板3：活动广场（兽聚横版海报） ---- */
+  .meet-list { display: grid; gap: 22px; }
+  .meet-card {
+    position: relative; display: flex; align-items: stretch;
+    border: 1px solid rgba(255,138,42,.4); background: linear-gradient(120deg, #221811 0%, #1a1216 60%, #180f17 100%);
+    text-decoration: none; color: inherit; overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+    transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+  }
+  .meet-card:hover {
+    transform: translateY(-5px); border-color: #ff8a2a;
+    box-shadow: 0 18px 44px rgba(255,138,42,.14), 0 8px 24px rgba(0,0,0,.5);
+  }
+  .meet-card .poster {
+    flex: 1.45; min-width: 0; position: relative; overflow: hidden;
+    border-right: 1px solid rgba(255,138,42,.25);
+  }
+  .meet-card .poster img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    filter: saturate(.72) brightness(.88);
+    transition: filter .4s ease, transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .meet-card:hover .poster img { filter: none; transform: scale(1.04); }
+  .meet-card .poster::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(20,12,8,.25), transparent 40%);
+    pointer-events: none;
+  }
+  .meet-card .poster .badge {
+    position: absolute; left: 0; top: 16px; z-index: 2;
+    background: #ff8a2a; color: #140b04; font-weight: 900; font-size: 11px; letter-spacing: .25em;
+    padding: 5px 14px 5px 18px;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  }
+  .meet-card .minfo {
+    flex: 1; min-width: 0; padding: 26px 26px 24px;
+    display: flex; flex-direction: column; justify-content: center; gap: 11px; position: relative;
+  }
+  .meet-card .minfo .cls {
+    align-self: flex-start; font-family: var(--font-latin); font-size: 10px; letter-spacing: .28em;
+    color: #ffb15c; border: 1px solid rgba(255,138,42,.55); padding: 3px 10px;
+  }
+  .meet-card .minfo .name { font-size: 22px; font-weight: 900; letter-spacing: .06em; }
+  .meet-card .minfo .name span { font-family: var(--font-latin); font-weight: 500; color: #c9925e; font-size: 13px; margin-left: 10px; letter-spacing: .12em; }
+  .meet-card .minfo .desc { color: #b3a08e; font-size: 13.5px; line-height: 1.85; }
+  .meet-card .minfo .go {
+    align-self: flex-start; margin-top: 4px; display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--font-latin); font-size: 11px; letter-spacing: .28em; color: #c9925e; transition: color .25s;
+  }
+  .meet-card:hover .minfo .go { color: #ffb15c; }
+  .meet-card .minfo .go::after { content: '▶'; font-size: 8px; }
+  .meet-card .idx {
+    position: absolute; right: 14px; top: 8px;
+    font-family: var(--font-latin); font-size: 34px; font-weight: 700;
+    color: transparent; -webkit-text-stroke: 1px rgba(255,138,42,.22); line-height: 1;
+  }
+  @media (max-width: 760px) {
+    .meet-card { flex-direction: column; }
+    .meet-card .poster { flex: none; height: 200px; border-right: none; border-bottom: 1px solid rgba(255,138,42,.25); }
+  }
+
+  /* ---- 面板4：联络 ---- */
+  .contact-wrap { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+  .ct-card {
+    border: 1px solid var(--ak-line); background: var(--ak-panel); padding: 24px 20px;
+    display: block; text-decoration: none; color: inherit; position: relative; overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+    transition: border-color .25s, transform .25s;
+  }
+  .ct-card:hover { border-color: var(--ak-yellow); transform: translateY(-4px); }
+  .ct-card .k { font-family: var(--font-latin); font-size: 11px; letter-spacing: .3em; color: var(--ak-gray); margin-bottom: 10px; }
+  .ct-card .v { font-size: 16px; font-weight: 700; color: var(--ak-white); word-break: break-all; }
+  .ct-card:hover .v { color: var(--ak-yellow); }
+  .ct-card .corner {
+    position: absolute; right: 0; top: 0; width: 0; height: 0;
+    border-top: 20px solid var(--ak-yellow); border-left: 20px solid transparent; opacity: 0; transition: opacity .25s;
+  }
+  .ct-card:hover .corner { opacity: 1; }
+  .ct-card .wave {
+    position: absolute; left: 16px; bottom: 14px; display: flex; gap: 3px; align-items: flex-end; height: 16px;
+  }
+  .ct-card .wave i { width: 3px; background: var(--ak-yellow); opacity: .7; animation: wave 1s ease-in-out infinite; }
+  .ct-card .wave i:nth-child(1) { height: 40%; animation-delay: 0s; }
+  .ct-card .wave i:nth-child(2) { height: 90%; animation-delay: .15s; }
+  .ct-card .wave i:nth-child(3) { height: 60%; animation-delay: .3s; }
+  .ct-card .wave i:nth-child(4) { height: 100%; animation-delay: .45s; }
+  @keyframes wave { 0%,100% { transform: scaleY(.4); } 50% { transform: scaleY(1); } }
+
+  /* ===== Footer ===== */
+  footer { border-top: 1px solid var(--ak-line); margin-top: 20px; }
+  .footer-inner {
+    max-width: 1200px; margin: 0 auto; padding: 34px 24px;
+    display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .footer-inner .copy { color: var(--ak-gray); font-size: 12px; letter-spacing: .1em; }
+  .footer-inner .copy b { color: var(--ak-white); }
+  .barcode {
+    height: 26px; width: 180px;
+    background: repeating-linear-gradient(90deg, var(--ak-white) 0 2px, transparent 2px 5px, var(--ak-white) 5px 6px, transparent 6px 10px, var(--ak-white) 10px 13px, transparent 13px 15px);
+    opacity: .5;
+  }
+  .footer-code { font-family: var(--font-latin); font-size: 10px; color: var(--ak-line); letter-spacing: .35em; }
+
+  .to-top {
+    position: fixed; right: 22px; bottom: 22px; z-index: 90;
+    width: 46px; height: 46px; background: var(--ak-yellow); color: #000;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-latin); font-weight: 700; text-decoration: none;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+    transition: transform .2s;
+  }
+  .to-top:hover { transform: translateY(-4px); }
+
+  /* 响应式 */
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; padding-top: 44px; }
+    .hero-sil { right: -220px; opacity: .32; }
+    .hero-right { padding: 10px 0 30px; }
+    .about-grid { grid-template-columns: 1fr; }
+    .nav { display: none; }
+    .topbar-code { display: none; }
+    .fac-tabs { flex-direction: column; }
+    .fac-tab { border-right: none; border-bottom: 1px solid var(--ak-line); justify-content: flex-start; padding-left: 18px; }
+    .fac-tab:last-child { border-bottom: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hazard"></div>
+<div class="scanbeam"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#" onclick="showPanel('file');return false;">
+      <span class="brand-mark">X</span>
+      <span class="brand-name">WOLF <em>HDX</em></span>
+    </a>
+    <nav class="nav">
+      <a data-tab="file" class="active" onclick="showPanel('file')">档案 FILE</a>
+      <a data-tab="links" onclick="showPanel('links')">情报网 LINKS</a>
+      <a data-tab="events" onclick="showPanel('events')">活动广场 EVENTS</a>
+      <a data-tab="contact" onclick="showPanel('contact')">联络 CONTACT</a>
+    </nav>
+    <span class="topbar-code">AW97 // <span class="live">● ONLINE</span></span>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <img class="hero-sil" src="assets/silhouette.png" alt="">
+  <div class="hero-left">
+    <div class="hero-tag latin">RHODES ISLAND · OPERATOR TERMINAL</div>
+    <h1 class="hero-title">
+      <span class="stroke glitch" data-t="XUAN SHUANG">XUAN SHUANG</span>
+      <span class="fill">HADES</span>
+    </h1>
+    <div class="hero-sub">
+      <span class="cn-name">玄霜</span>
+      <span class="divider"></span>
+      <span class="code">ARKNIGHTS - AW97 // STAFF</span>
+    </div>
+    <p class="hero-quote">
+      嗷呜～是一只<b>北极狼</b>！来自银河系之外的一颗小行星，今年 <span class="age">324</span> 岁了……对这边的<b>数码</b>特别感兴趣。还请大家多多指教！
+    </p>
+    <div class="hero-meta">
+      <div class="cell">
+        <div class="k">RACE / 种族</div>
+        <div class="v y">北极狼 · 混血</div>
+      </div>
+      <div class="cell">
+        <div class="k">AGE / 年龄</div>
+        <div class="v">324</div>
+      </div>
+      <div class="cell">
+        <div class="k">CLASS / 职业</div>
+        <div class="v">STAFF</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="pass-stack" id="passStack">
+      <div class="pass-stamp">ACCESS GRANTED ✓</div>
+      <div class="pass-card"><img src="assets/pass_front.png" alt="玄霜通行证 正面"></div>
+      <div class="pass-id">AW97 - VERIFIED</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 滚动播报 ============ -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span>RHODES ISLAND <b>//</b> OPERATOR AW97 <b>//</b> XUAN SHUANG HADES <b>//</b> SYSTEM ONLINE <b>//</b> 欢迎登舰，博士 <b>//</b> WOLF 65% · DRAGON 25% · MECHANIC 10% <b>//</b> ACCESS GRANTED <b>//</b></span>
+    <span>RHODES ISLAND <b>//</b> OPERATOR AW97 <b>//</b> XUAN SHUANG HADES <b>//</b> SYSTEM ONLINE <b>//</b> 欢迎登舰，博士 <b>//</b> WOLF 65% · DRAGON 25% · MECHANIC 10% <b>//</b> ACCESS GRANTED <b>//</b></span>
+  </div>
+</div>
+
+<!-- ============ 基建控制台 ============ -->
+<div class="console" id="console">
+  <div class="console-head">
+    <div class="console-title">
+      <span class="num">CTRL</span>
+      <h2>基建控制台</h2>
+      <span class="en">RIIC CONTROL / 控制中枢</span>
+    </div>
+  </div>
+
+  <div class="fac-tabs" role="tablist">
+    <button class="fac-tab active" data-tab="file" role="tab">
+      <span class="ico">📋</span> 档案室 <span class="cnt">FILE</span>
+    </button>
+    <button class="fac-tab" data-tab="links" role="tab">
+      <span class="ico">🤝</span> 会客室 <span class="cnt">11</span>
+    </button>
+    <button class="fac-tab" data-tab="events" role="tab">
+      <span class="ico">🎪</span> 活动广场 <span class="cnt">03</span>
+    </button>
+    <button class="fac-tab" data-tab="contact" role="tab">
+      <span class="ico">📡</span> 通讯站 <span class="cnt">04</span>
+    </button>
+  </div>
+
+  <div class="fac-panels">
+    <!-- 档案室 -->
+    <div class="fac-panel on" id="panel-file">
+      <div class="panel-tag">SEC.01 / FILE ROOM</div>
+      <div class="about-grid">
+        <div class="file-block">
+          <div class="fb-head"><span>PERSONAL RECORD · 个人记录</span><span class="tag">CONFIDENTIAL</span></div>
+          <div class="fb-body">
+            <div class="file-stats">
+              <div class="st"><div class="k">SPECIES</div><div class="v y">龙狼</div></div>
+              <div class="st"><div class="k">ORIGIN</div><div class="v">域外</div></div>
+              <div class="st"><div class="k">AGE</div><div class="v">324</div></div>
+              <div class="st"><div class="k">STATUS</div><div class="v y">在职</div></div>
+            </div>
+            <p>
+              哈喽～本狼中文名叫<b>玄霜</b>，来自银河系之外的一颗小行星，今年 <b>324</b> 岁了……对这边的<b>数码</b>特别感兴趣。还请大家多多指教！
+            </p>
+            <p class="uwu">嗷呜嗷呜 uwu 🐺</p>
+          </div>
+        </div>
+
+        <div class="file-block">
+          <div class="fb-head"><span>PHYSICAL EXAM · 综合体检测试</span><span class="tag">LIVE</span></div>
+          <div class="fb-body">
+            <div class="exam-row">
+              <div class="exam-label"><span class="n">🐺 狼 WOLF</span><span class="p">65%</span></div>
+              <div class="exam-bar"><i style="width:65%; animation-delay:.1s"></i></div>
+            </div>
+            <div class="exam-row">
+              <div class="exam-label"><span class="n">🐉 龙 DRAGON</span><span class="p">25%</span></div>
+              <div class="exam-bar"><i class="dragon" style="width:25%; animation-delay:.3s"></i></div>
+            </div>
+            <div class="exam-row">
+              <div class="exam-label"><span class="n">🤖 机械 MECHANIC</span><span class="p">10%</span></div>
+              <div class="exam-bar"><i class="mech" style="width:10%; animation-delay:.5s"></i></div>
+            </div>
+            <p class="exam-note alert">最新检测报告：与上期相比，龙族基因比例显著上升（10% → 25%），检测到基因序列异常波动，已上报医疗部，建议持续观察。</p>
+            <p class="exam-note">检测到机体成分异常：龙族因子与机械义体共存，建议定期回罗德岛复检。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 会客室（友链） -->
+    <div class="fac-panel" id="panel-links">
+      <div class="panel-tag">SEC.02 / RECEPTION ROOM</div>
+      <p class="panel-sub">已登记干员 <b>11</b> 名 · 咱的一些好朋友！uwu · <b>点击卡片</b>接通线路 · 兽聚活动请移步 <b>活动广场</b> 🎪</p>
+      <div class="link-grid">
+        <a class="op-card" href="https://www.whitrayhb.top/" target="_blank" rel="noopener">
+          <span class="idx">01</span>
+          <div class="avatar"><img src="assets/avatars/link-whitrayhb.jpg" alt="不咕鸽头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">PERRO</span>
+            <div class="name">不咕鸽 <span>WhitrayHB</span></div>
+            <div class="desc">不怎么会咕咕的鸽子一只<br>是一只不怎么会咕咕咕的鸽子～</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://space.bilibili.com/1856942180" target="_blank" rel="noopener">
+          <span class="idx">02</span>
+          <div class="avatar"><img src="assets/avatars/link-fishtreasure.jpg" alt="Fishtreasure头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">FISH</span>
+            <div class="name">Fishtreasure <span>凑鱼</span></div>
+            <div class="desc">好吃的大尾巴鱼一只😋<br>呜呜呜凑鱼</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://space.bilibili.com/3493077836630952" target="_blank" rel="noopener">
+          <span class="idx">03</span>
+          <div class="avatar"><img src="assets/avatars/link-xinghui.jpg" alt="虎斑猫星珲头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">FELINE</span>
+            <div class="name">虎斑猫星珲 <span>Star</span></div>
+            <div class="desc">一只可可爱爱的虎斑猫 uwu<br>呜呜猫</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://stardito.top/" target="_blank" rel="noopener">
+          <span class="idx">04</span>
+          <div class="avatar"><img src="assets/avatars/link-stardito.jpg" alt="星焰头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">VULPO</span>
+            <div class="name">星焰 <span>Stardito</span></div>
+            <div class="desc">一个非常腻害的狐🦊<br>星河璀璨，散落人间</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://blog.fmyron.com" target="_blank" rel="noopener">
+          <span class="idx">05</span>
+          <div class="avatar"><img src="assets/avatars/link-myron.jpg" alt="洺渊头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">DRAGON</span>
+            <div class="name">洺渊 <span>myron</span></div>
+            <div class="desc">可爱🐲🦊一只🤤<br>过去已成为过去，将来还是将来，而我们能改变的只有现在</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://smalldream.ink" target="_blank" rel="noopener">
+          <span class="idx">06</span>
+          <div class="avatar"><img src="assets/avatars/link-smalldream.jpg" alt="小梦头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">DREAM</span>
+            <div class="name">小梦 <span>Small Dream</span></div>
+            <div class="desc">🤤抽象的可爱一个<br>小梦的小站～</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://space.bilibili.com/357363729" target="_blank" rel="noopener">
+          <span class="idx">07</span>
+          <div class="avatar"><img src="assets/avatars/link-senyuken.jpg" alt="星语·诚头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">BIXIU</span>
+            <div class="name">星语·诚 <span>SenyuKen</span></div>
+            <div class="desc">可爱狴犴龙虎一只<br>🌟🌧️🍊🥹🥹🥹大家快去关注他</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://space.bilibili.com/40551160" target="_blank" rel="noopener">
+          <span class="idx">08</span>
+          <div class="avatar"><img src="assets/avatars/link-bancheng.png" alt="半城不是橙头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">ORANGE</span>
+            <div class="name">半城不是橙 <span>Bancheng</span></div>
+            <div class="desc">😋🍊一个<br>可爱半城，速速 follow</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://blog.lin-fun.com" target="_blank" rel="noopener">
+          <span class="idx">10</span>
+          <div class="avatar"><img src="assets/avatars/link-linfun.jpg" alt="林风头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">WIND</span>
+            <div class="name">林风 <span>LinFun</span></div>
+            <div class="desc">可爱蓝色大龙龙一只🐲<br>🐲可爱大只，万能林风？</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://sevtinge.com/" target="_blank" rel="noopener">
+          <span class="idx">11</span>
+          <div class="avatar"><img src="assets/avatars/link-sevtinge.png" alt="绀漓头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">CODE</span>
+            <div class="name">绀漓 <span>Sevtinge</span></div>
+            <div class="desc">技术大佬一只～博客直达</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+        <a class="op-card" href="https://blog.xming.cloud/" target="_blank" rel="noopener">
+          <span class="idx">12</span>
+          <div class="avatar"><img src="assets/avatars/link-xming.png" alt="小明头像" loading="lazy"></div>
+          <div class="info">
+            <span class="cls">CLOUD</span>
+            <div class="name">小明 <span>Xming</span></div>
+            <div class="desc">云上小站～博客直达</div>
+            <span class="go">ACCESS FILE</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 活动广场（兽聚） -->
+    <div class="fac-panel" id="panel-events">
+      <div class="panel-tag">SEC.03 / EVENT PLAZA</div>
+      <p class="panel-sub">正在举办 / 预告中的兽聚活动 <b>3</b> 场 · 怎么朋友里全是兽聚啊喂！· <b>点击海报</b>前往官网</p>
+      <div class="meet-list">
+        <a class="meet-card" href="https://www.furward.cn/home" target="_blank" rel="noopener">
+          <span class="idx">E-01</span>
+          <div class="poster">
+            <span class="badge">HOT 火热筹办</span>
+            <img src="assets/posters/furward.jpg" alt="兽行迹 Furward 海报" loading="lazy">
+          </div>
+          <div class="minfo">
+            <span class="cls">FURMEET · 兽聚聚会</span>
+            <div class="name">兽行迹 <span>Furward</span></div>
+            <div class="desc">大型沉浸式酒店兽展 · 岩漠寻踪，共赴生灵诗篇。2026 年 5 月 1 日 - 4 日，广东广州，再度相遇！</div>
+            <span class="go">GO TO SITE</span>
+          </div>
+        </a>
+        <a class="meet-card" href="https://mianron.furpass.cn/home" target="_blank" rel="noopener">
+          <span class="idx">E-02</span>
+          <div class="poster">
+            <span class="badge">TRIP 出发滴叭</span>
+            <img src="assets/posters/mianrong.jpg" alt="绵绒汇·风行悠旅海报" loading="lazy">
+          </div>
+          <div class="minfo">
+            <span class="cls">FURMEET · 兽聚聚会</span>
+            <div class="name">绵绒汇 <span>风行悠旅</span></div>
+            <div class="desc">MIAN FURRY GATHERING · 开上大巴车，兜着风去看云～一起踏上风行悠旅吧！</div>
+            <span class="go">GO TO SITE</span>
+          </div>
+        </a>
+        <a class="meet-card" href="https://xi.furpass.cn" target="_blank" rel="noopener">
+          <span class="idx">E-03</span>
+          <div class="poster">
+            <span class="badge">MEET 线下聚聚</span>
+            <img src="assets/posters/luoxi.png" alt="洛茜聚海报" loading="lazy">
+          </div>
+          <div class="minfo">
+            <span class="cls">FURMEET · 兽聚聚会</span>
+            <div class="name">洛茜聚 <span>Luoxi Meet</span></div>
+            <div class="desc">泰茜 Tessie 聚聚创办的兽聚～怎么活动里也有个兽聚啊喂！Q群 976137749</div>
+            <span class="go">GO TO SITE</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- 通讯站（联络） -->
+    <div class="fac-panel" id="panel-contact">
+      <div class="panel-tag">SEC.04 / COMMS STATION</div>
+      <p class="panel-sub">通讯链路 <b>全部在线</b> · 博士，选一条线路来捕捉本狼吧！</p>
+      <div class="contact-wrap">
+        <a class="ct-card" href="https://qm.qq.com/q/F9wOG4CSF" target="_blank" rel="noopener">
+          <span class="corner"></span>
+          <div class="k">QQ GROUP / 狼群频道</div>
+          <div class="v">713235772</div>
+          <div class="wave"><i></i><i></i><i></i><i></i></div>
+        </a>
+        <a class="ct-card" href="mailto:hades3073235324@qq.com">
+          <span class="corner"></span>
+          <div class="k">MAIL / 通讯信标</div>
+          <div class="v">hades3073235324@qq.com</div>
+          <div class="wave"><i></i><i></i><i></i><i></i></div>
+        </a>
+        <a class="ct-card" href="https://steamcommunity.com/profiles/76561199193663501/" target="_blank" rel="noopener">
+          <span class="corner"></span>
+          <div class="k">STEAM / 作战平台</div>
+          <div class="v">HADESXUAN</div>
+          <div class="wave"><i></i><i></i><i></i><i></i></div>
+        </a>
+        <a class="ct-card" href="https://space.bilibili.com/481201830" target="_blank" rel="noopener">
+          <span class="corner"></span>
+          <div class="k">BILIBILI / 投放频道</div>
+          <div class="v">一键跳转 ▶</div>
+          <div class="wave"><i></i><i></i><i></i><i></i></div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hazard static"></div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="copy">Copyright © 2026 <b>HADESXUAN</b> · Designed by HADESXUAN · Rhodes Island Fan UI</div>
+    <div class="barcode"></div>
+    <div class="footer-code">ARKNIGHTS - AW97 // END OF FILE</div>
+  </div>
+</footer>
+
+<a class="to-top" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">▲</a>
+
+<script>
+  // ===== 基建风格板块切换 =====
+  const tabs = document.querySelectorAll('.fac-tab');
+  const navLinks = document.querySelectorAll('.nav a');
+  function showPanel(id) {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+    document.querySelectorAll('.fac-panel').forEach(p => p.classList.remove('on'));
+    const panel = document.getElementById('panel-' + id);
+    // 重新触发入场动画
+    void panel.offsetWidth;
+    panel.classList.add('on');
+    navLinks.forEach(a => a.classList.toggle('active', a.dataset.tab === id));
+    document.getElementById('console').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  tabs.forEach(t => t.addEventListener('click', () => showPanel(t.dataset.tab)));
+  navLinks.forEach(a => a.addEventListener('click', () => showPanel(a.dataset.tab)));
+
+  // ===== 通行证鼠标视差 =====
+  const stack = document.getElementById('passStack');
+  window.addEventListener('mousemove', e => {
+    const rx = (e.clientY / window.innerHeight - .5) * -8;
+    const ry = (e.clientX / window.innerWidth - .5) * 10;
+    stack.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+  });
+
+  // ===== 体检条：切到档案面板时重播动画 =====
+  const examBars = document.querySelectorAll('.exam-bar i');
+  const filePanel = document.getElementById('panel-file');
+  const barObserver = new MutationObserver(() => {
+    if (filePanel.classList.contains('on')) {
+      examBars.forEach(b => { b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; });
+    }
+  });
+  barObserver.observe(filePanel, { attributes: true, attributeFilter: ['class'] });
+</script>
+</body>
+</html>
